@@ -3,6 +3,58 @@ from datetime import datetime, timedelta
 import sys
 import json
 
+def query_blackholed_date(username, token):
+    url = f"https://api.intra.42.fr/v2/users/{username}/cursus_users"
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        cursus_users = response.json()
+        for cursus_user in cursus_users:
+            blackholed_at = cursus_user.get('blackholed_at')
+            if blackholed_at and blackholed_at != 'null':
+                return blackholed_at
+        print("No blackholed date found.")
+        return None
+    else:
+        print(f"Error fetching cursus users data: {response.status_code}, {response.text}")
+        return None
+
+def query_projects(username, token):
+    url = f"https://api.intra.42.fr/v2/users/{username}/projects_users"
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Error fetching projects data: {response.status_code}, {response.text}")
+        return []
+
+def get_most_recent_validation(projects):
+    """Extract the most recent validation date from validated projects."""
+    validated_projects = []
+    for project in projects:
+        # Assuming validation can be inferred from 'final_mark' and 'status'
+        if project.get('final_mark') is not None and project.get('status') == 'finished':
+            for team in project.get('teams', []):
+                # Assuming the 'updated_at' field in teams can serve as a proxy for validation date
+                if team.get('final_mark') is not None:
+                    validated_projects.append(team)
+
+    if validated_projects:
+        # Use 'updated_at' as a proxy for the validation date
+        latest_project = max(validated_projects, key=lambda p: datetime.fromisoformat(p['updated_at'].rstrip('Z')))
+        return datetime.fromisoformat(latest_project['updated_at'].rstrip('Z'))
+    return None
+
+def calculate_validation_time(last_validation_date):
+    """Calculate days since last validation and days before hitting the blackhole."""
+    if last_validation_date:
+        today = datetime.now()
+        days_since_last_validation = (today - last_validation_date).days
+        return days_since_last_validation
+    return None
+
 def get_current_chunk_dates():
     base_start_date = datetime(2024, 1, 26)
     today = datetime.now()
@@ -74,3 +126,22 @@ if __name__ == "__main__":
     
     total_hours = calculate_total_hours(locations)
     print(f"User {username} spent a total of {total_hours:.2f} hours from {start_at} to {end_at}.")
+
+    projects = query_projects(username, token)
+    last_validation_date = get_most_recent_validation(projects)
+    days_since_last_validation = calculate_validation_time(last_validation_date)
+
+    if last_validation_date:
+        print(f"Last project validated on: {last_validation_date.strftime('%Y-%m-%d')}")
+        print(f"Days since last project validation: {days_since_last_validation}")
+        blackholed_date_str = query_blackholed_date(username, token)
+        if blackholed_date_str:
+            blackholed_date = datetime.fromisoformat(blackholed_date_str.rstrip('Z'))
+            days_until_blackhole = (blackholed_date - datetime.now()).days
+            print(f"Blackhole date: {blackholed_date.strftime('%Y-%m-%d')}")
+            print(f"Days until blackhole: {days_until_blackhole}")
+        else:
+            print("Failed to fetch blackhole date.")
+    else:
+        print("No validated projects found or unable to calculate.")
+
