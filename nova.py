@@ -60,7 +60,7 @@ def calculate_total_hours(locations):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python script.py <username>")
+        print("Usage: python script.py <login>")
         sys.exit(1)
     
     token = generate_token()
