@@ -2,6 +2,8 @@ import requests
 from datetime import datetime, timedelta
 import sys
 import json
+from colorama import Fore, Style
+from tabulate import tabulate
 
 def query_blackholed_date(username, token):
     url = f"https://api.intra.42.fr/v2/users/{username}/cursus_users"
@@ -125,23 +127,23 @@ if __name__ == "__main__":
     locations = query_user_hours(username, start_at, end_at, token)
     
     total_hours = calculate_total_hours(locations)
-    print(f"User {username} spent a total of {total_hours:.2f} hours from {start_at} to {end_at}.")
+    total_hours_formatted = f"{Style.BRIGHT}{total_hours:.2f}{Style.RESET_ALL}"
+    print(f"{Fore.BLUE}User {username} spent a total of {total_hours_formatted} {Fore.BLUE}hours from {start_at} to {end_at}.{Style.RESET_ALL}")
 
     projects = query_projects(username, token)
     last_validation_date = get_most_recent_validation(projects)
     days_since_last_validation = calculate_validation_time(last_validation_date)
 
     if last_validation_date:
-        print(f"Last project validated on: {last_validation_date.strftime('%Y-%m-%d')}")
-        print(f"Days since last project validation: {days_since_last_validation}")
+        print(f"{Fore.GREEN}Last project validated on: {Fore.WHITE}{last_validation_date.strftime('%Y-%m-%d')}")
+        print(f"{Fore.GREEN}Days since last project validation: {Fore.WHITE}{days_since_last_validation}{Style.RESET_ALL}")
         blackholed_date_str = query_blackholed_date(username, token)
         if blackholed_date_str:
             blackholed_date = datetime.fromisoformat(blackholed_date_str.rstrip('Z'))
             days_until_blackhole = (blackholed_date - datetime.now()).days
-            print(f"Blackhole date: {blackholed_date.strftime('%Y-%m-%d')}")
-            print(f"Days until blackhole: {days_until_blackhole}")
+            print(f"{Fore.RED}Blackhole date: {Fore.WHITE}{blackholed_date.strftime('%Y-%m-%d')}")
+            print(f"{Fore.RED}Days until blackhole: {Fore.WHITE}{days_until_blackhole}{Style.RESET_ALL}")
         else:
-            print("Failed to fetch blackhole date.")
+            print(f"{Fore.YELLOW}Failed to fetch blackhole date.{Style.RESET_ALL}")
     else:
-        print("No validated projects found or unable to calculate.")
-
+        print(f"{Fore.YELLOW}No validated projects found or unable to calculate.{Style.RESET_ALL}")

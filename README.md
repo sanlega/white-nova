@@ -10,9 +10,10 @@ Before you use the script, ensure you have Python installed on your system and h
 
 - Python 3.x
 - `requests` library installed in your Python environment. You can install this library using pip:
+- `colorama and tabulate` libraries to format the output.
 
 ```bash
-pip install requests
+pip install requests colorama tabulate
 ```
 
 ### Configuration
