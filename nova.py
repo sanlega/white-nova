@@ -61,7 +61,7 @@ def get_current_chunk_dates():
     base_start_date = datetime(2024, 5, 17)
     today = datetime.now()
     days_since_base = (today - base_start_date).days
-    chunk_length = 15
+    chunk_length = 14
 
     chunks_since_base = days_since_base // chunk_length
     current_chunk_start_date = base_start_date + timedelta(days=chunks_since_base * chunk_length)
